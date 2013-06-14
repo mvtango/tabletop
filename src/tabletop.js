@@ -70,7 +70,8 @@
     this.singleton = !!options.singleton;
     this.simple_url = !!options.simple_url;
     this.callbackContext = options.callbackContext;
-    
+	this.columnLabels = options.columnLabels || false;
+	
     if(typeof(options.proxy) !== 'undefined') {
       this.endpoint = options.proxy;
       this.simple_url = true;
@@ -288,6 +289,9 @@
       this.sheetsToLoad = toLoad.length;
       for(i = 0, ilen = toLoad.length; i < ilen; i++) {
         this.requestData(toLoad[i], this.loadSheet);
+        if (this.columnLabels) {
+			this.requestData((toLoad[i].replace("/list/","/cells/"))+"&max-rows=1",this.addLabels)
+		}
       }
     },
 
@@ -328,6 +332,19 @@
         this.doCallback();
     },
 
+
+	addLabels: function(data) {
+		var h=parseInt(data.feed.gs$colCount.$t);
+		var n=data.feed.title.$t;
+		var l=[]
+		for (var i=0;i<h; i++) {
+			l.push(data.feed.entry[i].content.$t);
+		}
+		if (typeof this.models[n] == "undefined") {
+			this.models[n]={};
+		}
+		this.models[n].column_labels=l;
+	},
     /*
       Execute the callback upon loading! Rely on this.data() because you might
         only request certain pieces of data (i.e. simpleSheet mode)
